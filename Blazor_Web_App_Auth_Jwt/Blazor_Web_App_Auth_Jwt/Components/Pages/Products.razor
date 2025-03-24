@@ -1,0 +1,177 @@
+﻿@page "/product"
+@inject IProductService ProductService
+@inject NavigationManager Navigation
+
+<div class="row">
+    <div class="col-9">
+        <h3 class="mb-4"><i class="fas fa-box"></i> Product Management</h3>
+    </div>
+    <div class="col-3">
+        <button class="btn btn-success mb-3 form-control" @onclick="ShowAddProductModal">
+            <i class="fas fa-plus fa-beat"></i> Add Product
+        </button>
+    </div>
+</div>
+
+@if (products == null)
+{
+    <p>Loading products...</p>
+}
+else if (!products.Any())
+{
+    <p>No products available.</p>
+}
+else
+{
+    <table  class="table table-bordered table-striped">
+        <thead class="table-dark">
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Quantity</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var product in products)
+            {
+                <tr>
+                    <td>@product.Id</td>
+                    <td>@product.Name</td>
+                    <td>@product.Quantity</td>
+                    <td class="text-center">
+                        <button class="btn btn-primary btn-sm me-2 offset-1" @onclick="() => ShowEditProductModal(product)">
+                            <i class="fas fa-edit fa-beat"></i>
+                        </button>
+                        <button class="btn btn-danger btn-sm" @onclick="() => ConfirmDeleteProduct(product.Id)">
+                            <i class="fas fa-trash fa-beat"></i>
+                        </button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+<!-- Add/Edit Product Modal -->
+@if (showModal)
+{
+    <div class="modal fade show d-block" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">@(editingProduct.Id == 0 ? "Add Product" : "Edit Product")</h5>
+                    <button type="button" class="btn-close" @onclick="CloseModal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Product Name</label>
+                        <input type="text" class="form-control" @bind="editingProduct.Name" />
+                        @if (validationErrors.ContainsKey(nameof(editingProduct.Name)))
+                        {
+                            <div class="text-danger">@validationErrors[nameof(editingProduct.Name)]</div>
+                        }
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Quantity</label>
+                        <input type="number" class="form-control" @bind="editingProduct.Quantity" />
+                        @if (validationErrors.ContainsKey(nameof(editingProduct.Quantity)))
+                        {
+                            <div class="text-danger">@validationErrors[nameof(editingProduct.Quantity)]</div>
+                        }
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" @onclick="CloseModal">Cancel</button>
+                    <button class="btn btn-success" @onclick="SaveProduct">
+                        <i class="fas fa-save"></i> Save
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
+}
+
+@code {
+
+
+
+    private List<Product> products = new();
+    private Product editingProduct = new();
+    private bool showModal = false;
+    private Dictionary<string, string> validationErrors = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadProducts();
+    }
+
+
+
+    private async Task LoadProducts()
+    {
+        products = (await ProductService.GetProductsAsync()).ToList();
+    }
+
+    private void ShowAddProductModal()
+    {
+        editingProduct = new Product();
+        validationErrors.Clear();
+        showModal = true;
+    }
+
+    private void ShowEditProductModal(Product product)
+    {
+        editingProduct = new Product
+            {
+                Id = product.Id,
+                Name = product.Name,
+                Quantity = product.Quantity
+            };
+        validationErrors.Clear();
+        showModal = true;
+    }
+
+    private async Task SaveProduct()
+    {
+        var validator = new ProductValidator();
+        var validationResult = validator.Validate(editingProduct);
+
+        if (validationResult.IsValid)
+        {
+            if (editingProduct.Id == 0)
+            {
+                await ProductService.AddProductAsync(editingProduct);
+            }
+            else
+            {
+                await ProductService.UpdateProductAsync(editingProduct);
+            }
+            showModal = false;
+            await LoadProducts();
+        }
+        else
+        {
+            validationErrors = validationResult.Errors
+                .GroupBy(e => e.PropertyName)
+                .ToDictionary(g => g.Key, g => string.Join(", ", g.Select(e => e.ErrorMessage)));
+        }
+    }
+
+    private async Task ConfirmDeleteProduct(int id)
+    {
+        await DeleteProduct(id);
+    }
+
+    private async Task DeleteProduct(int id)
+    {
+        await ProductService.DeleteProductAsync(id);
+        await LoadProducts();  
+    }
+
+    private void CloseModal()
+    {
+        showModal = false;
+    }
+}

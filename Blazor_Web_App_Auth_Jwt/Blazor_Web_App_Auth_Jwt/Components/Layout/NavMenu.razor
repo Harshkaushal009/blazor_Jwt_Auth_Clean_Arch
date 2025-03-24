@@ -1,0 +1,73 @@
+﻿@inject IAuthService AuthService
+@inject NavigationManager Navigation
+
+
+
+<CascadingAuthenticationState>
+    <div class="top-row ps-3 navbar navbar-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="">BlazorAuthNoIdentity</a>
+        </div>
+    </div>
+
+    <input type="checkbox" title="Navigation menu" class="navbar-toggler" />
+
+    <div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
+        <nav class="flex-column">
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+                    <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
+                </NavLink>
+            </div>
+
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="counter">
+                    <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Counter
+                </NavLink>
+            </div>
+
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="weather">
+                    <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Weather
+                </NavLink>
+            </div>
+
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="profile">
+                    <span class="bi bi-person-fill" aria-hidden="true"></span> Profile
+                </NavLink>
+            </div>
+
+            <div class="nav-item px-3">
+                <AuthorizeView>
+                    <NotAuthorized>
+                        <NavLink class="nav-link" href="auth/login">
+                            <span class="bi bi-box-arrow-in-right" aria-hidden="true"></span> Login
+                        </NavLink>
+                         <NavLink class="nav-link" href="auth/register">
+                            <span class="bi bi-box-arrow-in-right" aria-hidden="true"></span> Register
+                        </NavLink>
+                    </NotAuthorized>
+                    <Authorized>
+                         <NavLink class="nav-link" href="product">
+                            <span class="bi bi-box-arrow-in-right" aria-hidden="true"></span> Product
+                        </NavLink>
+                        <NavLink class="nav-link" href="#" @onclick="ManageLogOut">
+                            <span class="bi bi-box-arrow-right" aria-hidden="true"></span> Logout
+                        </NavLink> 
+                    </Authorized>
+                </AuthorizeView>
+            </div>
+        </nav>
+    </div>
+
+    @code {
+        private async Task ManageLogOut()
+        {
+            await AuthService.LogoutAsync();
+            Navigation.NavigateTo("/");
+        }
+    }
+</CascadingAuthenticationState>
+
+

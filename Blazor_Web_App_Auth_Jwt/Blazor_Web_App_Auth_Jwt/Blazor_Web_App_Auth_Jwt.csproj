@@ -1,0 +1,20 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Blazor_Web_App_Auth.Application\Blazor_Web_App_Auth.Application.csproj" />
+    <ProjectReference Include="..\..\Blazor_Web_App_Auth.Infrastructure\Blazor_Web_App_Auth.Infrastructure.csproj" />
+    <ProjectReference Include="..\Blazor_Web_App_Auth_Jwt.Client\Blazor_Web_App_Auth_Jwt.Client.csproj" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.14" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="8.0.14" />
+	  <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.14" />
+	  <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
+
+  </ItemGroup>
+
+</Project>

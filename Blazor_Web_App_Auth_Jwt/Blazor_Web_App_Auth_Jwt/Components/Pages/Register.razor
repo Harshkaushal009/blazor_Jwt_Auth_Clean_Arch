@@ -1,0 +1,98 @@
+﻿@page "/auth/register"
+@using Blazor_Web_App_Auth.Domain.Models
+@using Microsoft.AspNetCore.Authorization
+@using FluentValidation
+@using FluentValidation.Results
+@inject IAuthService AuthService
+@inject NavigationManager Navigation
+@attribute [AllowAnonymous]
+
+<CascadingAuthenticationState>
+    <AuthorizeView>
+        <Authorized>
+            <p class="text-center mt-5 text-success">Relax, You Are Already Logged In! 😎</p>
+        </Authorized>
+        <NotAuthorized>
+            <div class="d-flex justify-content-center align-items-center vh-100 bg-light">
+                <div class="card shadow-lg p-4 rounded-4 border-0" style="width: 400px;">
+                    <div class="text-center">
+                        <i class="bi bi-person-circle text-primary" style="font-size: 3rem;"></i>
+                        <h3 class="mt-2">Register</h3>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(errorMessage))
+                    {
+                        <div class="alert alert-danger text-center">@errorMessage</div>
+                    }
+
+                    <EditForm Model="User" OnValidSubmit="RegisterClick" Context="editFormContext">
+                        <DataAnnotationsValidator />
+                        <ValidationSummary class="alert alert-danger" />
+
+                        <div class="mb-3">
+                            <label class="form-label">Name:</label>
+                            <InputText @bind-Value="User.Name" class="form-control" placeholder="Enter your name" />
+                            <ValidationMessage For="@(() => User.Name)" class="text-danger" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Email:</label>
+                            <InputText @bind-Value="User.Email" class="form-control" placeholder="Enter your email" />
+                            <ValidationMessage For="@(() => User.Email)" class="text-danger" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Password:</label>
+                            <InputText @bind-Value="User.PasswordHash" class="form-control" type="password" placeholder="Enter your password" />
+                            <ValidationMessage For="@(() => User.PasswordHash)" class="text-danger" />
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100" disabled="@isSubmitting">
+                            @(isSubmitting ? "Registering..." : "Register")
+                        </button>
+
+                        <div class="text-center mt-3">
+                            <small>Have an account? <a href="/auth/login" class="text-primary">Login</a></small>
+                        </div>
+                    </EditForm>
+
+                </div>
+            </div>
+        </NotAuthorized>
+    </AuthorizeView>
+</CascadingAuthenticationState>
+
+@code
+{
+    private User User { get; set; } = new();
+    private string? errorMessage;
+    private bool isSubmitting = false;
+    private RegisterValidator UserValidator = new RegisterValidator();
+
+    private async Task RegisterClick()
+    {
+        isSubmitting = true;
+
+        ValidationResult validationResult = UserValidator.Validate(User);
+
+        if (validationResult.IsValid)
+        {
+            bool success = await AuthService.RegisterAsync(User);
+
+            if (success)
+            {
+                Navigation.NavigateTo("/auth/login");
+            }
+            else
+            {
+                errorMessage = "Registration Failed! Please try again.";
+            }
+        }
+        else
+        {
+            errorMessage = string.Join("<br>", validationResult.Errors.Select(e => e.ErrorMessage));
+        }
+
+        isSubmitting = false;
+    }
+}

@@ -1,0 +1,96 @@
+﻿@page "/auth/login"
+@inject IAuthService AuthService
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+@if (!isCheckingAuthState)
+{
+    <div class="d-flex justify-content-center align-items-center vh-100 bg-light">
+        <div class="card shadow-lg p-4 rounded-4 border-0" style="width: 400px;">
+            <div class="text-center">
+                <i class="bi bi-person-circle text-primary" style="font-size: 3rem;"></i>
+                <h3 class="mt-2">Login</h3>
+            </div>
+
+            @if (errorMessage is not null)
+            {
+                <div class="alert alert-danger text-center">@errorMessage</div>
+            }
+
+            <EditForm Model="loginModel" OnValidSubmit="HandleLogin" FormName="LoginForm">
+                <div class="mb-3">
+                    <label class="form-label">Email:</label>
+                    <InputText @bind-Value="loginModel.Email" class="form-control" placeholder="Enter your email" />
+                    @if (validationErrors.ContainsKey(nameof(loginModel.Email)))
+                    {
+                        <div class="text-danger">@validationErrors[nameof(loginModel.Email)]</div>
+                    }
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Password:</label>
+                    <InputText @bind-Value="loginModel.Password" class="form-control" type="password" placeholder="Enter your password" />
+                    @if (validationErrors.ContainsKey(nameof(loginModel.Password)))
+                    {
+                        <div class="text-danger">@validationErrors[nameof(loginModel.Password)]</div>
+                    }
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100">Login</button>
+
+                <div class="text-center mt-3">
+                    <small>Don't have an account? <a href="/auth/register" class="text-primary">Register</a></small>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+}
+
+@code {
+    [SupplyParameterFromForm(FormName = "LoginForm")]
+    private LoginViewModel loginModel { get; set; } = new();
+    private string? errorMessage;
+    private bool isCheckingAuthState = true;
+    private Dictionary<string, string> validationErrors = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity is not null && user.Identity.IsAuthenticated)
+        {
+            Navigation.NavigateTo("/");
+        }
+        else
+        {
+            isCheckingAuthState = false;
+        }
+    }
+
+    private async Task HandleLogin()
+    {
+        var validator = new LoginValidator();
+        var validationResult = validator.Validate(loginModel);
+
+        if (validationResult.IsValid)
+        {
+            bool success = await AuthService.LoginAsync(loginModel);
+
+            if (success)
+            {
+                Navigation.NavigateTo("/");
+            }
+            else
+            {
+                errorMessage = "Invalid email or password.";
+            }
+        }
+        else
+        {
+            validationErrors = validationResult.Errors
+                .GroupBy(e => e.PropertyName)
+                .ToDictionary(g => g.Key, g => string.Join(", ", g.Select(e => e.ErrorMessage)));
+        }
+    }
+}
